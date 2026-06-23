@@ -20,4 +20,9 @@ public class RecommendationController {
     public List<RecommendationResponse> recommendRecipes(@RequestBody RecommendationRequest request) {
         return recommendationService.recommendRecipes(request);
     }
+
+    @PostMapping("/max-missing/{maxMissing}")
+    public List<RecommendationResponse> recommendWithMaxMissingIngredients(@RequestBody RecommendationRequest request, @PathVariable int maxMissing) {
+        return recommendationService.recommendRecipesWithMaxMissingIngredients(request, maxMissing);
+    }
 }

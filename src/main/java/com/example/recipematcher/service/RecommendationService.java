@@ -5,20 +5,18 @@ import com.example.recipematcher.dto.RecommendationResponse;
 import com.example.recipematcher.model.Recipe;
 import com.example.recipematcher.model.RecipeIngredient;
 import com.example.recipematcher.repository.RecipeRepository;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
 
 @Service
 public class RecommendationService {
-    private final RecipeRepository recipeRepository;;
+    private final RecipeRepository recipeRepository;
 
     public RecommendationService(RecipeRepository recipeRepository) {
         this.recipeRepository = recipeRepository;
     }
 
-    @Transactional
     public List<RecommendationResponse> recommendRecipes(RecommendationRequest request) {
         if (request == null || request.ingredients() == null || request.ingredients().isEmpty()) {
             throw new IllegalArgumentException("Ingredient list cannot be empty");
@@ -41,7 +39,6 @@ public class RecommendationService {
             set.add(normalizeIngredientName(ingredient));
         }
         return set;
-
     }
 
     private String normalizeIngredientName(String name) {
@@ -71,5 +68,15 @@ public class RecommendationService {
                 new ArrayList<>(matchedIngredients),
                 new ArrayList<>(missingIngredients)
         );
+    }
+
+    public List<RecommendationResponse> recommendRecipesWithMaxMissingIngredients(RecommendationRequest request, int maxMissing) {
+        if (maxMissing < 0) {
+            throw new IllegalArgumentException("Max missing ingredients cannot be negative");
+        }
+        List<RecommendationResponse> recommendations = recommendRecipes(request);
+        return recommendations.stream()
+                .filter(recommendation -> recommendation.missingIngredients().size() <= maxMissing)
+                .toList();
     }
 }
