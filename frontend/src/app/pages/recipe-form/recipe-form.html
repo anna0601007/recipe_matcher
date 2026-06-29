@@ -8,7 +8,6 @@
       </p>
     </div>
   </div>
-
   @if (loading()) {
     <div class="state-card">
       <div class="loader"></div>
@@ -21,30 +20,21 @@
           {{ errorMessage() }}
         </div>
       }
-
       <h2>Basic information</h2>
-
       <div class="form-grid">
-        <label>
-          Title
+        <label>Title
           <input type="text" [formField]="recipeForm.title" />
-
           @if (recipeForm.title().invalid() && (recipeForm.title().touched() || submitted())) {
             <small>{{ recipeForm.title().errors()[0].message }}</small>
           }
         </label>
-
-        <label>
-          Cooking time, minutes
+        <label>Cooking time, minutes
           <input type="number" [formField]="recipeForm.cookingTimeMinutes" />
-
           @if (recipeForm.cookingTimeMinutes().invalid() && (recipeForm.cookingTimeMinutes().touched() || submitted())) {
             <small>{{ recipeForm.cookingTimeMinutes().errors()[0].message }}</small>
           }
         </label>
-
-        <label>
-          Category
+        <label>Category
           <select [formField]="recipeForm.category">
             <option value=""></option>
             <option value="BREAKFAST">Breakfast</option>
@@ -53,78 +43,56 @@
             <option value="DESSERT">Dessert</option>
             <option value="SNACK">Snack</option>
             <option value="DRINK">Drink</option>
-            <option value="OTHER">Other</option>
           </select>
-
           @if (recipeForm.category().invalid() && (recipeForm.category().touched() || submitted())) {
             <small>{{ recipeForm.category().errors()[0].message }}</small>
           }
         </label>
-
-        <label>
-          Difficulty
+        <label>Difficulty
           <select [formField]="recipeForm.difficulty">
             <option value=""></option>
             <option value="EASY">Easy</option>
             <option value="MEDIUM">Medium</option>
             <option value="HARD">Hard</option>
           </select>
-
           @if (recipeForm.difficulty().invalid() && (recipeForm.difficulty().touched() || submitted())) {
             <small>{{ recipeForm.difficulty().errors()[0].message }}</small>
           }
         </label>
-
-        <label class="full-width">
-          Description
+        <label class="full-width">Description
           <textarea rows="4" [formField]="recipeForm.description"></textarea>
-
           @if (recipeForm.description().invalid() && (recipeForm.description().touched() || submitted())) {
             <small>{{ recipeForm.description().errors()[0].message }}</small>
           }
         </label>
-
-        <label class="full-width">
-          Instructions
+        <label class="full-width">Instructions
           <textarea rows="6" [formField]="recipeForm.instructions"></textarea>
-
           @if (recipeForm.instructions().invalid() && (recipeForm.instructions().touched() || submitted())) {
             <small>{{ recipeForm.instructions().errors()[0].message }}</small>
           }
         </label>
       </div>
-
       <div class="ingredients-section">
         <div class="section-header">
           <h2>Ingredients</h2>
-
           <button type="button" class="secondary-button" (click)="addIngredient()">
             Add ingredient
           </button>
         </div>
-
         @for (ingredient of model().ingredients; track $index; let i = $index) {
           <div class="ingredient-card">
             <div class="ingredient-header">
               <h3>Ingredient {{ i + 1 }}</h3>
-
-              <button type="button" class="danger-button" (click)="removeIngredient(i)">
-                Remove
-              </button>
+              <button type="button" class="danger-button" (click)="removeIngredient(i)">Remove</button>
             </div>
-
             <div class="ingredient-grid">
-              <label>
-                Name
+              <label>Name
                 <input type="text" [formField]="recipeForm.ingredients[i].name" />
-
                 @if (recipeForm.ingredients[i].name().invalid() && (recipeForm.ingredients[i].name().touched() || submitted())) {
                   <small>{{ recipeForm.ingredients[i].name().errors()[0].message }}</small>
                 }
               </label>
-
-              <label>
-                Category
+              <label>Category
                 <select [formField]="recipeForm.ingredients[i].category">
                   <option value=""></option>
                   <option value="VEGETABLE">Vegetable</option>
@@ -134,36 +102,39 @@
                   <option value="DAIRY">Dairy</option>
                   <option value="GRAIN">Grain</option>
                   <option value="SPICE">Spice</option>
+                  <option value="OIL">Oil</option>
+                  <option value="SAUCE">Sauce</option>
                   <option value="OTHER">Other</option>
                 </select>
-
                 @if (recipeForm.ingredients[i].category().invalid() && (recipeForm.ingredients[i].category().touched() || submitted())) {
                   <small>{{ recipeForm.ingredients[i].category().errors()[0].message }}</small>
                 }
               </label>
-
-              <label>
-                Amount
+              <label>Amount
                 <input type="number" [formField]="recipeForm.ingredients[i].amount" />
-
                 @if (recipeForm.ingredients[i].amount().invalid() && (recipeForm.ingredients[i].amount().touched() || submitted())) {
                   <small>{{ recipeForm.ingredients[i].amount().errors()[0].message }}</small>
                 }
               </label>
-
-              <label>
-                Unit
-                <input type="text" [formField]="recipeForm.ingredients[i].unit" />
-
+              <label>Unit
+                <select [formField]="recipeForm.ingredients[i].unit">
+                  <option value=""></option>
+                  <option value="GRAM">Gram</option>
+                  <option value="KILOGRAM">Kilogram</option>
+                  <option value="MILLILITER">Milliliter</option>
+                  <option value="LITER">Liter</option>
+                  <option value="PIECE">Piece</option>
+                  <option value="TEASPOON">Teaspoon</option>
+                  <option value="TABLESPOON">Tablespoon</option>
+                  <option value="CUP">Cup</option>
+                  <option value="PINCH">Pinch</option>
+                </select>
                 @if (recipeForm.ingredients[i].unit().invalid() && (recipeForm.ingredients[i].unit().touched() || submitted())) {
                   <small>{{ recipeForm.ingredients[i].unit().errors()[0].message }}</small>
                 }
               </label>
-
-              <label class="full-width">
-                Note
+              <label class="full-width">Note
                 <input type="text" [formField]="recipeForm.ingredients[i].note" />
-
                 @if (recipeForm.ingredients[i].note().invalid() && (recipeForm.ingredients[i].note().touched() || submitted())) {
                   <small>{{ recipeForm.ingredients[i].note().errors()[0].message }}</small>
                 }
@@ -172,12 +143,8 @@
           </div>
         }
       </div>
-
       <div class="form-actions">
-        <button type="button" class="secondary-button" (click)="cancel()">
-          Cancel
-        </button>
-
+        <button type="button" class="secondary-button" (click)="cancel()">Cancel</button>
         <button type="submit" class="primary-button" [disabled]="saving()">
           {{ saving() ? 'Saving...' : 'Save recipe' }}
         </button>

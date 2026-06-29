@@ -21,9 +21,9 @@ export interface Recipe {
 export interface RecipeIngredientRequest {
   name: string;
   category: string;
-  amount: number | null;
+  amount: number;
   unit: string;
-  note: string;
+  note: string | null;
 }
 
 export interface RecipeRequest {

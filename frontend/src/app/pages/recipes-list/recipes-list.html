@@ -1,18 +1,12 @@
 <section class="recipes-page">
-
   <div class="page-header">
     <div>
       <p class="eyebrow">RecipeMatcher</p>
       <h1>Recipes</h1>
-      <p class="subtitle">
-        Browse all saved recipes and check their ingredients, difficulty and cooking time.
-      </p>
+      <p class="subtitle">Browse all saved recipes and check their ingredients, difficulty and cooking time.</p>
     </div>
-    <a class="primary-button link-button" routerLink="/recipes/new">
-      + Add recipe
-    </a>
+    <a class="primary-button link-button" routerLink="/recipes/new">+ Add recipe</a>
   </div>
-
   <div class="filters-card">
     <div class="filter-field">
       <label>Category</label>
@@ -23,7 +17,6 @@
         }
       </select>
     </div>
-
     <div class="filter-field">
       <label>Difficulty</label>
       <select [value]="selectedDifficulty()" (change)="onDifficultyChange($event)">
@@ -33,28 +26,15 @@
         }
       </select>
     </div>
-
     <div class="filter-field">
       <label>Max cooking time</label>
-      <input
-        type="number"
-        min="1"
-        [value]="maxCookingTime()"
-        (input)="onMaxCookingTimeChange($event)"
-      />
+      <input type="number" min="1" [value]="maxCookingTime()" (input)="onMaxCookingTimeChange($event)"/>
     </div>
-
     <div class="filter-actions">
-      <button type="button" class="secondary-button" (click)="clearFilters()">
-        Clear
-      </button>
-
-      <button type="button" class="primary-button" (click)="applyFilters()">
-        Apply filters
-      </button>
+      <button type="button" class="secondary-button" (click)="clearFilters()">Clear</button>
+      <button type="button" class="primary-button" (click)="applyFilters()">Apply filters</button>
     </div>
   </div>
-
 
   @if (loading()) {
     <div class="state-card">
@@ -68,40 +48,28 @@
     </div>
   } @else {
     <div class="recipes-grid">
-
       @for (recipe of recipes(); track recipe.id) {
         <article class="recipe-card">
-
           <div class="card-header">
             <div>
               <h2>{{ recipe.title }}</h2>
               <p class="description">{{ recipe.description }}</p>
             </div>
-
-            <span
-              class="difficulty"
-              [class.easy]="recipe.difficulty === 'EASY'"
-              [class.medium]="recipe.difficulty === 'MEDIUM'"
-              [class.hard]="recipe.difficulty === 'HARD'"
-            >
+            <span class="difficulty" [class.easy]="recipe.difficulty === 'EASY'" [class.medium]="recipe.difficulty === 'MEDIUM'" [class.hard]="recipe.difficulty === 'HARD'">
               {{ formatEnum(recipe.difficulty) }}
             </span>
           </div>
-
           <div class="meta-row">
             <span>{{ formatEnum(recipe.category) }}</span>
             <span>{{ recipe.cookingTimeMinutes }} min</span>
             <span>{{ recipe.ingredients.length }} ingredients</span>
           </div>
-
           <div class="instructions">
             <h3>Instructions</h3>
             <p>{{ recipe.instructions }}</p>
           </div>
-
           <div class="ingredients">
             <h3>Ingredients</h3>
-
             <ul>
               @for (ingredient of recipe.ingredients; track $index) {
                 <li>
@@ -113,26 +81,16 @@
               }
             </ul>
           </div>
-
           <div class="card-actions">
             <a class="secondary-button link-button" [routerLink]="['/recipes/edit', recipe.id]">
               Edit
             </a>
-
-            <button
-              class="danger-button"
-              type="button"
-              [disabled]="deletingRecipeId() === recipe.id"
-              (click)="deleteRecipe(recipe)"
-            >
+            <button class="danger-button" type="button" [disabled]="deletingRecipeId() === recipe.id" (click)="deleteRecipe(recipe)">
               {{ deletingRecipeId() === recipe.id ? 'Deleting...' : 'Delete' }}
             </button>
           </div>
-
         </article>
       }
-
     </div>
   }
-
 </section>

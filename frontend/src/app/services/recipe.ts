@@ -1,7 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { catchError, EMPTY, map, Observable } from 'rxjs';
-
 import { Recipe, RecipeRequest } from '../entities/recipe-entity';
 import { MessageService } from './message';
 
@@ -11,7 +10,6 @@ import { MessageService } from './message';
 export class RecipeService {
   http = inject(HttpClient);
   messageService = inject(MessageService);
-
   url = 'http://localhost:8080/api/';
 
   getRecipes(): Observable<Recipe[]> {
@@ -50,15 +48,12 @@ export class RecipeService {
     if (category) {
       params = params.set('category', category);
     }
-
     if (difficulty) {
       params = params.set('difficulty', difficulty);
     }
-
     if (maxCookingTime !== undefined || maxCookingTime) {
       params = params.set('maxCookingTime', maxCookingTime);
     }
-
     return this.http.get<Recipe[]>(this.url + 'recipes/filter', { params }).pipe(
       catchError(error => this.processError(error))
     );
@@ -70,7 +65,6 @@ export class RecipeService {
         this.messageService.errorMessage('Server not available');
         return EMPTY;
       }
-
       if (error.status >= 400 && error.status < 500) {
         const message =
           error.error?.message ||
@@ -80,7 +74,6 @@ export class RecipeService {
         this.messageService.errorMessage(message);
         return EMPTY;
       }
-
       if (error.status >= 500) {
         this.messageService.errorMessage(
           'Server has some serious problems, contact administrator.'
@@ -88,7 +81,6 @@ export class RecipeService {
         return EMPTY;
       }
     }
-
     console.error('HTTP connection error', error);
     return EMPTY;
   }

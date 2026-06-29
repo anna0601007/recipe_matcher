@@ -43,6 +43,9 @@ h1 {
 }
 
 .recipe-card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
   background: rgba(255, 255, 255, 0.92);
   border: 1px solid #fed7aa;
   border-radius: 24px;
@@ -175,7 +178,8 @@ h1 {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
-  margin-top: 24px;
+  margin-top: auto;
+  padding-top: 24px;
 }
 
 button,

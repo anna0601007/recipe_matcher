@@ -1,18 +1,10 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import {
-  applyEach,
-  applyWhenValue,
-  FormField,
-  form,
-  maxLength,
-  min,
-  minLength,
-  required,
-} from '@angular/forms/signals';
-
+import { applyEach, FormField, form, maxLength, min, minLength, required, } from '@angular/forms/signals';
 import { Recipe, RecipeIngredient, RecipeRequest } from '../../entities/recipe-entity';
 import { RecipeService } from '../../services/recipe';
+import { MessageService } from '../../services/message';
+import { finalize } from 'rxjs';
 
 interface IngredientInput {
   name: string;
@@ -43,6 +35,7 @@ export class RecipeForm implements OnInit {
   recipeService = inject(RecipeService);
   router = inject(Router);
   activatedRoute = inject(ActivatedRoute);
+  messageService = inject(MessageService);
 
   pageTitle = signal('');
   recipeId = signal<number | undefined>(undefined);
@@ -83,17 +76,17 @@ export class RecipeForm implements OnInit {
 
       required(ingredient.category, { message: 'Ingredient category is required' });
 
-
+      required(ingredient.amount, { message: 'Amount is required' });
       min(ingredient.amount, 0, { message: 'Amount cant be negative' });
 
-      maxLength(ingredient.unit, 30, { message: 'Unit is too long' });
+      required(ingredient.unit, { message: 'Unit is required' });
+
       maxLength(ingredient.note, 200, { message: 'Note is too long' });
     });
   });
 
   ngOnInit(): void {
     const id = Number(this.activatedRoute.snapshot.params['id']);
-
     if (!Number.isNaN(id)) {
       this.pageTitle.set('Edit recipe');
       this.recipeId.set(id);
@@ -105,7 +98,6 @@ export class RecipeForm implements OnInit {
 
   private loadRecipe(id: number): void {
     this.loading.set(true);
-
     this.recipeService.getRecipe(id).subscribe({
       next: (recipe: Recipe) => {
         this.model.set({
@@ -120,7 +112,6 @@ export class RecipeForm implements OnInit {
               ? recipe.ingredients.map(ingredient => this.mapIngredientToInput(ingredient))
               : [this.emptyIngredient()],
         });
-
         this.loading.set(false);
       },
       error: () => {
@@ -160,7 +151,6 @@ export class RecipeForm implements OnInit {
   removeIngredient(index: number): void {
     this.model.update(model => {
       const nextIngredients = model.ingredients.filter((_, i) => i !== index);
-
       return {
         ...model,
         ingredients: nextIngredients.length > 0 ? nextIngredients : [this.emptyIngredient()],
@@ -172,13 +162,10 @@ export class RecipeForm implements OnInit {
     event?.preventDefault();
     this.submitted.set(true);
     this.errorMessage.set('');
-
     if (this.recipeForm().invalid()) {
       return;
     }
-
     const data = this.model();
-
     const request: RecipeRequest = {
       title: data.title.trim(),
       description: data.description.trim(),
@@ -190,23 +177,24 @@ export class RecipeForm implements OnInit {
       ingredients: data.ingredients.map(ingredient => ({
         name: ingredient.name.trim(),
         category: ingredient.category,
-        amount: ingredient.amount === '' ? null : Number(ingredient.amount),
-        unit: ingredient.unit.trim(),
-        note: ingredient.note.trim(),
+        amount: Number(ingredient.amount),
+        unit: ingredient.unit,
+        note: ingredient.note.trim() === '' ? null : ingredient.note.trim(),
       })),
-    };
-
+      };
     this.saving.set(true);
 
-    this.recipeService.saveRecipe(request, this.recipeId()).subscribe({
-      next: () => {
-        this.router.navigateByUrl('/recipes');
-      },
-      error: () => {
-        this.errorMessage.set('Failed to save recipe.');
-        this.saving.set(false);
-      },
-    });
+    this.recipeService.saveRecipe(request, this.recipeId())
+      .pipe(finalize(() => this.saving.set(false)))
+      .subscribe({
+        next: () => {
+          this.messageService.successMessage('Recipe saved successfully');
+          this.router.navigateByUrl('/recipes');
+        },
+        error: () => {
+          this.errorMessage.set('Failed to save recipe.');
+        },
+      });
   }
 
   cancel(): void {

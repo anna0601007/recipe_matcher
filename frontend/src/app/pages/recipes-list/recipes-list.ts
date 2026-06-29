@@ -1,7 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
-
 import { Recipe } from '../../entities/recipe-entity';
 import { RecipeService } from '../../services/recipe';
 
@@ -14,17 +13,13 @@ import { RecipeService } from '../../services/recipe';
 })
 export class RecipesList {
   recipeService = inject(RecipeService);
-
   recipes = signal<Recipe[]>([]);
   loading = signal(false);
   deletingRecipeId = signal<number | null>(null);
-
   selectedCategory = signal('');
   selectedDifficulty = signal('');
   maxCookingTime = signal('');
-
   recipesCount = computed(() => this.recipes().length);
-
   filtersActive = computed(() =>
     !!this.selectedCategory() ||
     !!this.selectedDifficulty() ||
@@ -53,7 +48,6 @@ export class RecipesList {
 
   loadRecipes(): void {
     this.loading.set(true);
-
     this.recipeService.getRecipes()
       .pipe(finalize(() => this.loading.set(false)))
       .subscribe(recipes => {
@@ -65,14 +59,11 @@ export class RecipesList {
     const maxCookingTimeValue = this.maxCookingTime()
       ? Number(this.maxCookingTime())
       : undefined;
-
     if (maxCookingTimeValue !== undefined && maxCookingTimeValue < 1) {
       this.maxCookingTime.set('1');
       return;
     }
-
     this.loading.set(true);
-
     this.recipeService
       .filterRecipes(
         this.selectedCategory() || undefined,
@@ -105,25 +96,20 @@ export class RecipesList {
   onMaxCookingTimeChange(event: Event): void {
     const input = event.target as HTMLInputElement;
     const value = Number(input.value);
-
     if (input.value !== '' && value < 1) {
       input.value = '1';
       this.maxCookingTime.set('1');
       return;
     }
-
     this.maxCookingTime.set(input.value);
   }
 
   deleteRecipe(recipe: Recipe): void {
     const confirmed = confirm('Delete recipe ' + recipe.title + '?');
-
     if (!confirmed) {
       return;
     }
-
     this.deletingRecipeId.set(recipe.id);
-
     this.recipeService.deleteRecipe(recipe.id)
       .pipe(finalize(() => this.deletingRecipeId.set(null)))
       .subscribe(success => {
