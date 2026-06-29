@@ -57,4 +57,13 @@ public class RecipeController {
     public List<RecipeResponse> getRecipesByMaxCookingTime(@PathVariable Integer maxMinutes) {
         return recipeService.getRecipesByMaxCookingTime(maxMinutes);
     }
+
+    @GetMapping("/filter")
+    public List<RecipeResponse> filterRecipes(
+            @RequestParam(required = false) RecipeCategory category,
+            @RequestParam(required = false) RecipeDifficulty difficulty,
+            @RequestParam(required = false) Integer maxCookingTime
+    ) {
+        return recipeService.filterRecipes(category, difficulty, maxCookingTime);
+    }
 }

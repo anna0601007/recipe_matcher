@@ -10,27 +10,117 @@ import com.example.recipematcher.model.Ingredient;
 import com.example.recipematcher.model.Recipe;
 import com.example.recipematcher.model.RecipeIngredient;
 import com.example.recipematcher.repository.IngredientRepository;
-import com.example.recipematcher.repository.RecipeIngredientRepository;
 import com.example.recipematcher.repository.RecipeRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Service
 public class RecipeService {
     private final RecipeRepository recipeRepository;
     private final IngredientRepository ingredientRepository;
-    private final RecipeIngredientRepository recipeIngredientRepository;
 
     public RecipeService(RecipeRepository recipeRepository,
-                         IngredientRepository ingredientRepository,
-                         RecipeIngredientRepository recipeIngredientRepository) {
+                         IngredientRepository ingredientRepository) {
         this.recipeRepository = recipeRepository;
         this.ingredientRepository = ingredientRepository;
-        this.recipeIngredientRepository = recipeIngredientRepository;
+    }
+
+    @Transactional
+    public RecipeResponse createRecipe(RecipeRequest request) {
+        validateRecipeRequest(request);
+
+        Recipe recipe = new Recipe();
+        recipe.setTitle(request.title());
+        recipe.setDescription(request.description());
+        recipe.setInstructions(request.instructions());
+        recipe.setCookingTimeMinutes(request.cookingTimeMinutes());
+        recipe.setCategory(request.category());
+        recipe.setDifficulty(request.difficulty());
+
+        for (RecipeIngredientRequest ingredientRequest : request.ingredients()) {
+            RecipeIngredient recipeIngredient = createRecipeIngredient(recipe, ingredientRequest);
+            recipe.getRecipeIngredients().add(recipeIngredient);
+        }
+
+        Recipe savedRecipe = recipeRepository.save(recipe);
+        return mapToRecipeResponse(savedRecipe);
+    }
+
+    public List<RecipeResponse> getAllRecipes() {
+        return recipeRepository.findAll()
+                .stream()
+                .map(this::mapToRecipeResponse)
+                .toList();
+    }
+
+    public RecipeResponse getRecipeById(Long id) {
+        Recipe recipe = findRecipeById(id);
+        return mapToRecipeResponse(recipe);
+    }
+
+    @Transactional
+    public void deleteRecipe(Long id) {
+        Recipe recipe = findRecipeById(id);
+        recipeRepository.delete(recipe);
+    }
+
+    @Transactional
+    public RecipeResponse updateRecipe(Long id, RecipeRequest request) {
+        validateRecipeRequest(request);
+
+        Recipe recipe = findRecipeById(id);
+
+        recipe.setTitle(request.title());
+        recipe.setDescription(request.description());
+        recipe.setInstructions(request.instructions());
+        recipe.setCookingTimeMinutes(request.cookingTimeMinutes());
+        recipe.setCategory(request.category());
+        recipe.setDifficulty(request.difficulty());
+
+        recipe.getRecipeIngredients().clear();
+        recipeRepository.flush();
+
+        for (RecipeIngredientRequest ingredientRequest : request.ingredients()) {
+            RecipeIngredient recipeIngredient = createRecipeIngredient(recipe, ingredientRequest);
+            recipe.getRecipeIngredients().add(recipeIngredient);
+        }
+
+        Recipe savedRecipe = recipeRepository.save(recipe);
+        return mapToRecipeResponse(savedRecipe);
+    }
+
+    public List<RecipeResponse> getRecipesByCategory(RecipeCategory category) {
+        return recipeRepository.findByCategory(category)
+                .stream()
+                .map(this::mapToRecipeResponse)
+                .toList();
+    }
+
+    public List<RecipeResponse> getRecipesByDifficulty(RecipeDifficulty difficulty) {
+        return recipeRepository.findByDifficulty(difficulty)
+                .stream()
+                .map(this::mapToRecipeResponse)
+                .toList();
+    }
+
+    public List<RecipeResponse> getRecipesByMaxCookingTime(Integer maxMinutes) {
+        if (maxMinutes == null || maxMinutes <= 0) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Maximum cooking time must be positive"
+            );
+        }
+        return recipeRepository.findByCookingTimeMinutesLessThanEqual(maxMinutes)
+                .stream()
+                .map(this::mapToRecipeResponse)
+                .toList();
     }
 
     private void validateRecipeRequest(RecipeRequest request) {
@@ -64,25 +154,49 @@ public class RecipeService {
                     "Recipe must contain at least one ingredient"
             );
         }
+        Set<String> ingredientNames = new HashSet<>();
+        for (RecipeIngredientRequest ingredientRequest : request.ingredients()) {
+            validateIngredientRequest(ingredientRequest);
+            String normalizedName = normalizeIngredientName(ingredientRequest.name());
+            if (!ingredientNames.add(normalizedName)) {
+                throw new ResponseStatusException(
+                        HttpStatus.BAD_REQUEST,
+                        "Recipe cannot contain duplicate ingredients: " + normalizedName
+                );
+            }
+        }
     }
 
-    public RecipeResponse createRecipe(RecipeRequest request) {
-        validateRecipeRequest(request);
-        Recipe recipe = new Recipe();
-        recipe.setTitle(request.title());
-        recipe.setDescription(request.description());
-        recipe.setInstructions(request.instructions());
-        recipe.setCookingTimeMinutes(request.cookingTimeMinutes());
-        recipe.setCategory(request.category());
-        recipe.setDifficulty(request.difficulty());
-
-        for (RecipeIngredientRequest ingredientRequest : request.ingredients()) {
-            RecipeIngredient recipeIngredient = createRecipeIngredient(recipe, ingredientRequest);
-            recipe.getRecipeIngredients().add(recipeIngredient);
+    private void validateIngredientRequest(RecipeIngredientRequest ingredientRequest) {
+        if (ingredientRequest == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Ingredient cannot be null"
+            );
         }
+        if (ingredientRequest.name() == null || ingredientRequest.name().isBlank()) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Ingredient name cannot be empty"
+            );
+        }
+    }
 
-        Recipe savedRecipe = recipeRepository.save(recipe);
-        return mapToRecipeResponse(savedRecipe);
+    private Recipe findRecipeById(Long id) {
+        if (id == null) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "Recipe id cannot be null"
+            );
+        }
+        Optional<Recipe> optionalRecipe = recipeRepository.findById(id);
+        if (optionalRecipe.isEmpty()) {
+            throw new ResponseStatusException(
+                    HttpStatus.NOT_FOUND,
+                    "Recipe not found with id: " + id
+            );
+        }
+        return optionalRecipe.get();
     }
 
     private RecipeIngredient createRecipeIngredient(Recipe recipe, RecipeIngredientRequest ingredientRequest) {
@@ -136,79 +250,22 @@ public class RecipeService {
         );
     }
 
-    public List<RecipeResponse> getAllRecipes() {
-        return recipeRepository.findAll()
-                .stream()
-                .map(this::mapToRecipeResponse)
-                .toList();
-    }
-
-    public RecipeResponse getRecipeById(Long id) {
-        Recipe recipe = findRecipeById(id);
-        return mapToRecipeResponse(recipe);
-    }
-
-    private Recipe findRecipeById(Long id) {
-        if (id == null) {
+    public List<RecipeResponse> filterRecipes(RecipeCategory category, RecipeDifficulty difficulty, Integer maxCookingTime) {
+        if (maxCookingTime != null && maxCookingTime <= 0) {
             throw new ResponseStatusException(
                     HttpStatus.BAD_REQUEST,
-                    "Recipe id cannot be null"
+                    "Maximum cooking time must be positive"
             );
         }
-        Optional<Recipe> optionalRecipe = recipeRepository.findById(id);
-        if (optionalRecipe.isEmpty()) {
-            throw new ResponseStatusException(
-                    HttpStatus.NOT_FOUND,
-                    "Recipe not found with id: " + id
-            );
-        }
-        return optionalRecipe.get();
-    }
-
-    public void deleteRecipe(Long id) {
-        Recipe recipe = findRecipeById(id);
-        recipeRepository.delete(recipe);
-    }
-
-    public RecipeResponse updateRecipe(Long id, RecipeRequest request) {
-        validateRecipeRequest(request);
-        Recipe recipe = findRecipeById(id);
-        recipe.setTitle(request.title());
-        recipe.setDescription(request.description());
-        recipe.setInstructions(request.instructions());
-        recipe.setCookingTimeMinutes(request.cookingTimeMinutes());
-        recipe.setCategory(request.category());
-        recipe.setDifficulty(request.difficulty());
-
-        recipe.getRecipeIngredients().clear();
-        recipeIngredientRepository.deleteByRecipeId(id);
-        recipeRepository.flush();
-        for (RecipeIngredientRequest ingredientRequest : request.ingredients()) {
-            RecipeIngredient recipeIngredient = createRecipeIngredient(recipe, ingredientRequest);
-            recipe.getRecipeIngredients().add(recipeIngredient);
-        }
-
-        Recipe savedRecipe = recipeRepository.save(recipe);
-        return mapToRecipeResponse(savedRecipe);
-    }
-
-    public List<RecipeResponse> getRecipesByCategory(RecipeCategory category) {
-        return recipeRepository.findByCategory(category)
+        return recipeRepository.findAll()
                 .stream()
-                .map(this::mapToRecipeResponse)
-                .toList();
-    }
-
-    public List<RecipeResponse> getRecipesByDifficulty(RecipeDifficulty difficulty) {
-        return recipeRepository.findByDifficulty(difficulty)
-                .stream()
-                .map(this::mapToRecipeResponse)
-                .toList();
-    }
-
-    public List<RecipeResponse> getRecipesByMaxCookingTime(Integer maxMinutes) {
-        return recipeRepository.findByCookingTimeMinutesLessThanEqual(maxMinutes)
-                .stream()
+                .filter(recipe -> category == null || recipe.getCategory() == category)
+                .filter(recipe -> difficulty == null || recipe.getDifficulty() == difficulty)
+                .filter(recipe ->
+                        maxCookingTime == null ||
+                                recipe.getCookingTimeMinutes() != null &&
+                                        recipe.getCookingTimeMinutes() <= maxCookingTime
+                )
                 .map(this::mapToRecipeResponse)
                 .toList();
     }

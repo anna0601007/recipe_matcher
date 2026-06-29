@@ -1,0 +1,133 @@
+<section class="recommendations-page">
+
+  <div class="page-header">
+    <div>
+      <p class="eyebrow">RecipeMatcher</p>
+      <h1>Find recipes</h1>
+      <p class="subtitle">
+        Enter ingredients you already have and RecipeMatcher will show the best recipe matches.
+      </p>
+    </div>
+  </div>
+
+  <div class="search-card">
+    <form [formGroup]="form" (ngSubmit)="searchRecommendations()">
+
+      <label>
+        Your ingredients
+        <textarea
+          formControlName="ingredientsText"
+          rows="5"
+          placeholder="eggs, milk, flour"
+        ></textarea>
+
+        @if (isIngredientsInvalid()) {
+          <small>Ingredient list cannot be empty.</small>
+        }
+      </label>
+
+      <div class="hint">
+        You can separate ingredients with commas or new lines.
+      </div>
+
+      <label class="checkbox-row">
+        <input type="checkbox" formControlName="useMaxMissing">
+        <span>Limit maximum missing ingredients</span>
+      </label>
+
+      @if (isMaxMissingEnabled()) {
+        <label class="small-field">
+          Maximum missing ingredients
+          <input type="number" formControlName="maxMissing" min="0">
+
+          @if (isMaxMissingInvalid()) {
+            <small>Maximum missing ingredients cannot be negative.</small>
+          }
+        </label>
+      }
+
+      <div class="form-actions">
+        <button class="secondary-button" type="button" (click)="clearForm()">
+          Clear
+        </button>
+
+        <button class="primary-button" type="submit" [disabled]="loading()">
+          {{ loading() ? 'Searching...' : 'Find recipes' }}
+        </button>
+      </div>
+
+    </form>
+  </div>
+
+  @if (loading()) {
+    <div class="state-card">
+      <div class="loader"></div>
+      <p>Searching recipes...</p>
+    </div>
+  } @else if (searched() && recommendationsCount() === 0) {
+    <div class="state-card">
+      <h2>No matching recipes found</h2>
+      <p>Try adding more ingredients or increasing the maximum number of missing ingredients.</p>
+    </div>
+  } @else if (recommendationsCount() > 0) {
+    <div class="results-header">
+      <h2>Recommended recipes</h2>
+      <p>{{ recommendationsCount() }} recipes found</p>
+    </div>
+
+    <div class="recommendations-grid">
+      @for (recommendation of recommendations(); track recommendation.recipeId) {
+        <article class="recommendation-card">
+
+          <div class="card-header">
+            <div>
+              <h3>{{ recommendation.title }}</h3>
+              <p>Recipe ID: {{ recommendation.recipeId }}</p>
+            </div>
+
+            <div class="percentage">
+              {{ formatPercentage(recommendation.matchPercentage) }}%
+            </div>
+          </div>
+
+          <div class="progress">
+            <div
+              class="progress-fill"
+              [style.width.%]="recommendation.matchPercentage"
+            ></div>
+          </div>
+
+          <div class="ingredients-section matched">
+            <h4>Matched ingredients</h4>
+
+            @if (recommendation.matchedIngredients.length === 0) {
+              <p class="empty-text">No matched ingredients.</p>
+            } @else {
+              <div class="chips">
+                @for (ingredient of recommendation.matchedIngredients; track ingredient) {
+                  <span>{{ ingredient }}</span>
+                }
+              </div>
+            }
+          </div>
+
+          <div class="ingredients-section missing">
+            <h4>Missing ingredients</h4>
+
+            @if (recommendation.missingIngredients.length === 0) {
+              <p class="empty-text">You have all ingredients.</p>
+            } @else {
+              <div class="chips">
+                @for (ingredient of recommendation.missingIngredients; track ingredient) {
+                  <span>{{ ingredient }}</span>
+                }
+              </div>
+            }
+          </div>
+
+        </article>
+      }
+    </div>
+  }
+
+</section>
